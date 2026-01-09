@@ -19,7 +19,6 @@ export default function DashboardScreen({ navigation }: any) {
     partnerName,
   } = useCycleStore();
 
-  // Use our new "Translator" logic
   const intel = getTacticalIntel(lastPeriodDate, cycleLength);
   const daysUntil = getDaysUntilNext();
 
@@ -63,13 +62,24 @@ export default function DashboardScreen({ navigation }: any) {
           <Text style={styles.actionItem}>{intel.actionItem}</Text>
         </View>
 
-        {/* LOG BUTTON */}
-        <TouchableOpacity
-          onPress={() => logPeriodStart(new Date())}
-          style={styles.logBtn}
-        >
-          <Text style={styles.logBtnText}>LOG CYCLE START (TODAY)</Text>
-        </TouchableOpacity>
+        {/* ACTION GRID */}
+        <View style={styles.grid}>
+          {/* LOG BUTTON */}
+          <TouchableOpacity
+            onPress={() => logPeriodStart(new Date())}
+            style={[styles.btn, styles.logBtn]}
+          >
+            <Text style={styles.btnText}>LOG START</Text>
+          </TouchableOpacity>
+
+          {/* LOGISTICS BUTTON */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Inventory")}
+            style={[styles.btn, styles.inventoryBtn]}
+          >
+            <Text style={styles.btnText}>LOGISTICS</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -99,7 +109,7 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 30,
   },
   ringNumber: { fontSize: 60, fontWeight: "bold" },
   ringLabel: { color: "#8E8E93", fontSize: 12, letterSpacing: 2, marginTop: 5 },
@@ -127,14 +137,22 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   actionItem: { color: "#FFF", fontSize: 14, fontWeight: "600" },
-  logBtn: {
-    backgroundColor: "#333",
-    paddingVertical: 18,
+
+  /* New Grid for Buttons */
+  grid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     width: "100%",
+    gap: 15,
+  },
+  btn: {
+    flex: 1,
+    paddingVertical: 18,
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#444",
   },
-  logBtnText: { color: "#FFF", fontWeight: "bold", letterSpacing: 1 },
+  logBtn: { backgroundColor: "#333", borderColor: "#444" },
+  inventoryBtn: { backgroundColor: "#1C1C1E", borderColor: "#333" },
+  btnText: { color: "#FFF", fontWeight: "bold", letterSpacing: 1 },
 });

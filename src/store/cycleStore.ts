@@ -3,19 +3,28 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { addDays, differenceInDays } from "date-fns";
 
+// --- NEW: Define what an inventory item looks like ---
+export interface InventoryItem {
+  id: string;
+  label: string;
+  checked: boolean;
+}
+
 // 1. Define the shape of our data
 interface CycleState {
   partnerName: string;
-  lastPeriodDate: string | null; // We store dates as strings to avoid crashing JSON
+  lastPeriodDate: string | null;
   cycleLength: number;
+  inventory: InventoryItem[]; // <--- NEW: The Supply List
 
-  // Actions (The things we can do)
+  // Actions
   setPartnerName: (name: string) => void;
   setCycleLength: (days: number) => void;
   logPeriodStart: (date: Date) => void;
   resetData: () => void;
+  toggleInventory: (id: string) => void; // <--- NEW: Action to check boxes
 
-  // The "Computed" values (The magic numbers)
+  // Computed
   getDaysUntilNext: () => number;
   getCurrentPhase: () =>
     | "MENSTRUATION"
@@ -25,6 +34,14 @@ interface CycleState {
     | "UNKNOWN";
 }
 
+const DEFAULT_INVENTORY = [
+  { id: "1", label: "Comfort Rations (Chocolate)", checked: false },
+  { id: "2", label: "Pain Management (Meds)", checked: false },
+  { id: "3", label: "Thermal Support (Heat Pad)", checked: false },
+  { id: "4", label: "Sanitary Supplies", checked: false },
+  { id: "5", label: "Hydration Units", checked: false },
+];
+
 // 2. Create the store
 export const useCycleStore = create<CycleState>()(
   persist(
@@ -32,6 +49,7 @@ export const useCycleStore = create<CycleState>()(
       partnerName: "Partner",
       lastPeriodDate: null,
       cycleLength: 28,
+      inventory: DEFAULT_INVENTORY, // <--- NEW: Initialize list
 
       setPartnerName: (name) => set({ partnerName: name }),
 
@@ -39,7 +57,20 @@ export const useCycleStore = create<CycleState>()(
 
       logPeriodStart: (date) => set({ lastPeriodDate: date.toISOString() }),
 
-      resetData: () => set({ lastPeriodDate: null, cycleLength: 28 }),
+      // --- NEW: Toggle Logic ---
+      toggleInventory: (id) =>
+        set((state) => ({
+          inventory: state.inventory.map((item) =>
+            item.id === id ? { ...item, checked: !item.checked } : item
+          ),
+        })),
+
+      resetData: () =>
+        set({
+          lastPeriodDate: null,
+          cycleLength: 28,
+          inventory: DEFAULT_INVENTORY,
+        }),
 
       getDaysUntilNext: () => {
         const { lastPeriodDate, cycleLength } = get();
@@ -61,15 +92,15 @@ export const useCycleStore = create<CycleState>()(
           new Date(lastPeriodDate)
         );
 
-        if (daysPassed < 5) return "MENSTRUATION"; // Days 1-5
-        if (daysPassed < 12) return "FOLLICULAR"; // Days 6-11
-        if (daysPassed < 16) return "OVULATION"; // Days 12-16
-        return "LUTEAL"; // Days 17-28 (The Danger Zone)
+        if (daysPassed < 5) return "MENSTRUATION";
+        if (daysPassed < 12) return "FOLLICULAR";
+        if (daysPassed < 16) return "OVULATION";
+        return "LUTEAL";
       },
     }),
     {
-      name: "red-protocol-storage", // unique name for storage
-      storage: createJSONStorage(() => AsyncStorage), // Use React Native's storage
+      name: "red-protocol-storage",
+      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 );
