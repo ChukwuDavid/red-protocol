@@ -10,13 +10,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCycleStore } from "../store/cycleStore";
 import { getTacticalIntel } from "../utils/translator";
+import { getRadarPredictions } from "../utils/radar";
 
-// Import our new components
+// Components
 import CalendarWidget from "../components/CalendarWidget";
 import TacticalCard from "../components/TacticalCard";
 import SupplyDropButton from "../components/SupplyDropButton";
 import TacticalCommsModal from "../components/TacticalCommsModal";
-import SupplyDropModal from "../components/SupplyDropModal"; // <--- New Import
+import SupplyDropModal from "../components/SupplyDropModal";
+import SymptomModal from "../components/SymptomModal";
+import RadarWidget from "../components/RadarWidget";
 
 export default function DashboardScreen({ navigation }: any) {
   const {
@@ -25,17 +28,31 @@ export default function DashboardScreen({ navigation }: any) {
     periodDuration,
     logPeriodStart,
     partnerName,
+    symptoms, // <--- Get symptoms from store
   } = useCycleStore();
 
   const intel = getTacticalIntel(lastPeriodDate, cycleLength, periodDuration);
+  const radarPredictions = getRadarPredictions(
+    lastPeriodDate,
+    cycleLength,
+    symptoms
+  );
 
   // State for Modals
   const [commsVisible, setCommsVisible] = useState(false);
-  const [supplyVisible, setSupplyVisible] = useState(false); // <--- New State
+  const [supplyVisible, setSupplyVisible] = useState(false);
+  const [symptomVisible, setSymptomVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Helper to open Logistics for a specific date
+  // Helper to open Logistics
   const openLogistics = (date: Date = new Date()) => {
     navigation.navigate("Inventory", { date: date.toISOString() });
+  };
+
+  // Helper to open Symptom Logger
+  const openSymptomLogger = (date: Date) => {
+    setSelectedDate(date);
+    setSymptomVisible(true);
   };
 
   return (
@@ -54,20 +71,25 @@ export default function DashboardScreen({ navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.mainContent}>
+        {/* COMPONENT 0: Radar Widget (Shows only if threats detected) */}
+        <RadarWidget predictions={radarPredictions} />
+
         {/* COMPONENT 1: The Tactical Calendar */}
         <CalendarWidget
           lastPeriodDate={lastPeriodDate}
           cycleLength={cycleLength}
           periodDuration={periodDuration}
+          symptoms={symptoms} // <--- Pass symptoms to calendar
           onDateSelect={logPeriodStart}
           onViewLog={openLogistics}
+          onLogIncident={openSymptomLogger}
           accentColor={intel.color}
         />
 
         {/* COMPONENT 2: The Intel Card */}
         <TacticalCard intel={intel} />
 
-        {/* COMPONENT 3: TACTICAL COMMS (AI DIPLOMAT) */}
+        {/* COMPONENT 3: TACTICAL COMMS */}
         <TouchableOpacity
           style={styles.commsBtn}
           onPress={() => setCommsVisible(true)}
@@ -87,25 +109,27 @@ export default function DashboardScreen({ navigation }: any) {
         </View>
 
         {/* COMPONENT 4: THE PANIC BUTTON */}
-        {/* Now triggers the modal instead of acting directly */}
         <View style={{ marginTop: 20 }}>
           <SupplyDropButton onPress={() => setSupplyVisible(true)} />
         </View>
       </ScrollView>
 
       {/* MODALS */}
-
-      {/* AI Diplomat */}
       <TacticalCommsModal
         visible={commsVisible}
         onClose={() => setCommsVisible(false)}
         phase={intel.phase}
       />
 
-      {/* New Supply Drop Modal */}
       <SupplyDropModal
         visible={supplyVisible}
         onClose={() => setSupplyVisible(false)}
+      />
+
+      <SymptomModal
+        visible={symptomVisible}
+        onClose={() => setSymptomVisible(false)}
+        date={selectedDate}
       />
     </SafeAreaView>
   );
@@ -141,7 +165,6 @@ const styles = StyleSheet.create({
   inventoryBtn: { backgroundColor: "#1C1C1E", borderColor: "#333" },
   btnText: { color: "#FFF", fontWeight: "bold", letterSpacing: 1 },
 
-  // Styles for Comms Button
   commsBtn: {
     flexDirection: "row",
     backgroundColor: "#333",

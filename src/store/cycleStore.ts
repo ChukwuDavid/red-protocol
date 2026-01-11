@@ -16,6 +16,7 @@ interface CycleState {
   periodDuration: number;
 
   history: Record<string, InventoryItem[]>;
+  symptoms: Record<string, string[]>; // <--- NEW: Incident Log (Date -> ["Migraine", "Acne"])
 
   setPartnerName: (name: string) => void;
   setCycleLength: (days: number) => void;
@@ -25,6 +26,8 @@ interface CycleState {
 
   toggleLogForDate: (date: Date, itemId: string) => void;
   getLogForDate: (date: Date) => InventoryItem[];
+
+  toggleSymptom: (date: Date, symptom: string) => void; // <--- NEW: Action
 
   getDaysUntilNext: () => number;
   getCurrentPhase: () =>
@@ -36,7 +39,6 @@ interface CycleState {
 }
 
 // --- PHASE SPECIFIC CHECKLISTS ---
-
 const MENSTRUATION_ITEMS = [
   { id: "m1", label: "Comfort Rations (Chocolate)", checked: false },
   { id: "m2", label: "Pain Management (Meds)", checked: false },
@@ -83,7 +85,6 @@ const getPhaseForDate = (
   const lastStart = new Date(lastPeriodDate);
   const daysDiff = differenceInDays(targetDate, lastStart);
 
-  // Calculate cycle day allowing for past/future projection
   let cycleDay =
     daysDiff >= 0
       ? daysDiff % cycleLength
@@ -95,7 +96,6 @@ const getPhaseForDate = (
   return "LUTEAL";
 };
 
-// --- HELPER: Get List based on Phase ---
 const getListForPhase = (phase: string) => {
   switch (phase) {
     case "MENSTRUATION":
@@ -119,6 +119,7 @@ export const useCycleStore = create<CycleState>()(
       cycleLength: 28,
       periodDuration: 5,
       history: {},
+      symptoms: {}, // <--- Initialize Empty
 
       setPartnerName: (name) => set({ partnerName: name }),
       setCycleLength: (days) => set({ cycleLength: days }),
@@ -131,16 +132,15 @@ export const useCycleStore = create<CycleState>()(
           cycleLength: 28,
           periodDuration: 5,
           history: {},
+          symptoms: {},
         }),
 
       getLogForDate: (date: Date) => {
         const dateKey = format(date, "yyyy-MM-dd");
         const { history, lastPeriodDate, cycleLength, periodDuration } = get();
 
-        // Return existing log if we touched it before
         if (history[dateKey]) return history[dateKey];
 
-        // Otherwise, generate the dynamic default based on the phase
         const phase = getPhaseForDate(
           date,
           lastPeriodDate,
@@ -153,8 +153,6 @@ export const useCycleStore = create<CycleState>()(
       toggleLogForDate: (date: Date, itemId: string) =>
         set((state) => {
           const dateKey = format(date, "yyyy-MM-dd");
-
-          // If log exists, use it. If not, generate the correct phase-specific default
           let currentLog = state.history[dateKey];
 
           if (!currentLog) {
@@ -172,10 +170,25 @@ export const useCycleStore = create<CycleState>()(
           );
 
           return {
-            history: {
-              ...state.history,
-              [dateKey]: updatedLog,
-            },
+            history: { ...state.history, [dateKey]: updatedLog },
+          };
+        }),
+
+      // --- NEW: Toggle Incident Tags ---
+      toggleSymptom: (date: Date, symptom: string) =>
+        set((state) => {
+          const dateKey = format(date, "yyyy-MM-dd");
+          const currentSymptoms = state.symptoms[dateKey] || [];
+
+          let updatedSymptoms;
+          if (currentSymptoms.includes(symptom)) {
+            updatedSymptoms = currentSymptoms.filter((s) => s !== symptom); // Remove
+          } else {
+            updatedSymptoms = [...currentSymptoms, symptom]; // Add
+          }
+
+          return {
+            symptoms: { ...state.symptoms, [dateKey]: updatedSymptoms },
           };
         }),
 
@@ -189,7 +202,6 @@ export const useCycleStore = create<CycleState>()(
 
       getCurrentPhase: () => {
         const { lastPeriodDate, periodDuration, cycleLength } = get();
-        // Reusing the helper logic for consistency
         return getPhaseForDate(
           new Date(),
           lastPeriodDate,
