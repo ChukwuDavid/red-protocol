@@ -1,30 +1,31 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { addDays, differenceInDays } from "date-fns";
+import { addDays, differenceInDays, format } from "date-fns";
 
-// --- NEW: Define what an inventory item looks like ---
 export interface InventoryItem {
   id: string;
   label: string;
   checked: boolean;
 }
 
-// 1. Define the shape of our data
 interface CycleState {
   partnerName: string;
   lastPeriodDate: string | null;
   cycleLength: number;
-  inventory: InventoryItem[]; // <--- NEW: The Supply List
+  periodDuration: number;
 
-  // Actions
+  history: Record<string, InventoryItem[]>;
+
   setPartnerName: (name: string) => void;
   setCycleLength: (days: number) => void;
+  setPeriodDuration: (days: number) => void;
   logPeriodStart: (date: Date) => void;
   resetData: () => void;
-  toggleInventory: (id: string) => void; // <--- NEW: Action to check boxes
 
-  // Computed
+  toggleLogForDate: (date: Date, itemId: string) => void;
+  getLogForDate: (date: Date) => InventoryItem[];
+
   getDaysUntilNext: () => number;
   getCurrentPhase: () =>
     | "MENSTRUATION"
@@ -34,68 +35,167 @@ interface CycleState {
     | "UNKNOWN";
 }
 
-const DEFAULT_INVENTORY = [
-  { id: "1", label: "Comfort Rations (Chocolate)", checked: false },
-  { id: "2", label: "Pain Management (Meds)", checked: false },
-  { id: "3", label: "Thermal Support (Heat Pad)", checked: false },
-  { id: "4", label: "Sanitary Supplies", checked: false },
-  { id: "5", label: "Hydration Units", checked: false },
+// --- PHASE SPECIFIC CHECKLISTS ---
+
+const MENSTRUATION_ITEMS = [
+  { id: "m1", label: "Comfort Rations (Chocolate)", checked: false },
+  { id: "m2", label: "Pain Management (Meds)", checked: false },
+  { id: "m3", label: "Thermal Support (Heat Pad)", checked: false },
+  { id: "m4", label: "Sanitary Supplies Restock", checked: false },
+  { id: "m5", label: "Hydration Units", checked: false },
 ];
 
-// 2. Create the store
+const FOLLICULAR_ITEMS = [
+  { id: "f1", label: "Plan Active Date (Hiking/Gym)", checked: false },
+  { id: "f2", label: "Social Event Planning", checked: false },
+  { id: "f3", label: "Creative Support", checked: false },
+  { id: "f4", label: "High Energy Outing", checked: false },
+];
+
+const OVULATION_ITEMS = [
+  { id: "o1", label: "Romantic Dinner / Date Night", checked: false },
+  { id: "o2", label: "High Confidence Compliments", checked: false },
+  { id: "o3", label: "Spontaneous Activity", checked: false },
+];
+
+const LUTEAL_ITEMS = [
+  { id: "l1", label: "Stock Cravings (Salty/Sweet)", checked: false },
+  { id: "l2", label: "De-escalation Protocol (Patience)", checked: false },
+  { id: "l3", label: "Low Stress Environment", checked: false },
+  { id: "l4", label: "Offer Massage / Relaxation", checked: false },
+  { id: "l5", label: "Active Listening Mode", checked: false },
+];
+
+const DEFAULT_ITEMS = [
+  { id: "d1", label: "Log Cycle Start Date", checked: false },
+  { id: "d2", label: "Check In With Partner", checked: false },
+];
+
+// --- HELPER: Calculate Phase for ANY date ---
+const getPhaseForDate = (
+  targetDate: Date,
+  lastPeriodDate: string | null,
+  cycleLength: number,
+  periodDuration: number
+) => {
+  if (!lastPeriodDate) return "UNKNOWN";
+
+  const lastStart = new Date(lastPeriodDate);
+  const daysDiff = differenceInDays(targetDate, lastStart);
+
+  // Calculate cycle day allowing for past/future projection
+  let cycleDay =
+    daysDiff >= 0
+      ? daysDiff % cycleLength
+      : (cycleLength + (daysDiff % cycleLength)) % cycleLength;
+
+  if (cycleDay < periodDuration) return "MENSTRUATION";
+  if (cycleDay < 12) return "FOLLICULAR";
+  if (cycleDay < 16) return "OVULATION";
+  return "LUTEAL";
+};
+
+// --- HELPER: Get List based on Phase ---
+const getListForPhase = (phase: string) => {
+  switch (phase) {
+    case "MENSTRUATION":
+      return [...MENSTRUATION_ITEMS];
+    case "FOLLICULAR":
+      return [...FOLLICULAR_ITEMS];
+    case "OVULATION":
+      return [...OVULATION_ITEMS];
+    case "LUTEAL":
+      return [...LUTEAL_ITEMS];
+    default:
+      return [...DEFAULT_ITEMS];
+  }
+};
+
 export const useCycleStore = create<CycleState>()(
   persist(
     (set, get) => ({
       partnerName: "Partner",
       lastPeriodDate: null,
       cycleLength: 28,
-      inventory: DEFAULT_INVENTORY, // <--- NEW: Initialize list
+      periodDuration: 5,
+      history: {},
 
       setPartnerName: (name) => set({ partnerName: name }),
-
       setCycleLength: (days) => set({ cycleLength: days }),
-
+      setPeriodDuration: (days) => set({ periodDuration: days }),
       logPeriodStart: (date) => set({ lastPeriodDate: date.toISOString() }),
-
-      // --- NEW: Toggle Logic ---
-      toggleInventory: (id) =>
-        set((state) => ({
-          inventory: state.inventory.map((item) =>
-            item.id === id ? { ...item, checked: !item.checked } : item
-          ),
-        })),
 
       resetData: () =>
         set({
           lastPeriodDate: null,
           cycleLength: 28,
-          inventory: DEFAULT_INVENTORY,
+          periodDuration: 5,
+          history: {},
+        }),
+
+      getLogForDate: (date: Date) => {
+        const dateKey = format(date, "yyyy-MM-dd");
+        const { history, lastPeriodDate, cycleLength, periodDuration } = get();
+
+        // Return existing log if we touched it before
+        if (history[dateKey]) return history[dateKey];
+
+        // Otherwise, generate the dynamic default based on the phase
+        const phase = getPhaseForDate(
+          date,
+          lastPeriodDate,
+          cycleLength,
+          periodDuration
+        );
+        return getListForPhase(phase);
+      },
+
+      toggleLogForDate: (date: Date, itemId: string) =>
+        set((state) => {
+          const dateKey = format(date, "yyyy-MM-dd");
+
+          // If log exists, use it. If not, generate the correct phase-specific default
+          let currentLog = state.history[dateKey];
+
+          if (!currentLog) {
+            const phase = getPhaseForDate(
+              date,
+              state.lastPeriodDate,
+              state.cycleLength,
+              state.periodDuration
+            );
+            currentLog = getListForPhase(phase);
+          }
+
+          const updatedLog = currentLog.map((item) =>
+            item.id === itemId ? { ...item, checked: !item.checked } : item
+          );
+
+          return {
+            history: {
+              ...state.history,
+              [dateKey]: updatedLog,
+            },
+          };
         }),
 
       getDaysUntilNext: () => {
         const { lastPeriodDate, cycleLength } = get();
         if (!lastPeriodDate) return 0;
-
         const lastDate = new Date(lastPeriodDate);
         const nextDate = addDays(lastDate, cycleLength);
-        const today = new Date();
-
-        return differenceInDays(nextDate, today);
+        return differenceInDays(nextDate, new Date());
       },
 
       getCurrentPhase: () => {
-        const { lastPeriodDate } = get();
-        if (!lastPeriodDate) return "UNKNOWN";
-
-        const daysPassed = differenceInDays(
+        const { lastPeriodDate, periodDuration, cycleLength } = get();
+        // Reusing the helper logic for consistency
+        return getPhaseForDate(
           new Date(),
-          new Date(lastPeriodDate)
-        );
-
-        if (daysPassed < 5) return "MENSTRUATION";
-        if (daysPassed < 12) return "FOLLICULAR";
-        if (daysPassed < 16) return "OVULATION";
-        return "LUTEAL";
+          lastPeriodDate,
+          cycleLength,
+          periodDuration
+        ) as any;
       },
     }),
     {

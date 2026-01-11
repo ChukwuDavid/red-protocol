@@ -8,9 +8,19 @@ import {
   ScrollView,
 } from "react-native";
 import { useCycleStore } from "../store/cycleStore";
+import { format } from "date-fns";
 
-export default function InventoryScreen({ navigation }: any) {
-  const { inventory, toggleInventory } = useCycleStore();
+export default function InventoryScreen({ navigation, route }: any) {
+  // We try to read the date passed from the Calendar.
+  // If no date passed, use today.
+  const dateParam = route.params?.date
+    ? new Date(route.params.date)
+    : new Date();
+
+  const { getLogForDate, toggleLogForDate } = useCycleStore();
+
+  // Get the specific history for this date
+  const inventory = getLogForDate(dateParam);
 
   const progress = inventory.filter((i) => i.checked).length / inventory.length;
   const progressPercent = Math.round(progress * 100);
@@ -20,13 +30,19 @@ export default function InventoryScreen({ navigation }: any) {
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{"< DASHBOARD"}</Text>
+          <Text style={styles.backText}>{"< BACK"}</Text>
         </TouchableOpacity>
         <Text style={styles.title}>LOGISTICS</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.content}>
+        <View style={styles.dateBadge}>
+          <Text style={styles.dateText}>
+            LOG FOR: {format(dateParam, "MMM dd, yyyy").toUpperCase()}
+          </Text>
+        </View>
+
         {/* STATUS BAR */}
         <View style={styles.statusBox}>
           <Text style={styles.statusLabel}>READINESS LEVEL</Text>
@@ -40,14 +56,14 @@ export default function InventoryScreen({ navigation }: any) {
           </Text>
         </View>
 
-        <Text style={styles.subHeader}>ESSENTIAL SUPPLY MANIFEST</Text>
+        <Text style={styles.subHeader}>DAILY CHECKLIST</Text>
 
         <ScrollView style={styles.list}>
           {inventory.map((item) => (
             <TouchableOpacity
               key={item.id}
               style={[styles.itemRow, item.checked && styles.itemRowChecked]}
-              onPress={() => toggleInventory(item.id)}
+              onPress={() => toggleLogForDate(dateParam, item.id)}
             >
               <View
                 style={[
@@ -86,6 +102,20 @@ const styles = StyleSheet.create({
   backText: { color: "#8E8E93", fontWeight: "bold", fontSize: 12 },
   title: { color: "#FFF", fontSize: 16, letterSpacing: 2, fontWeight: "bold" },
   content: { padding: 20, flex: 1 },
+  dateBadge: {
+    alignSelf: "center",
+    backgroundColor: "#333",
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    marginBottom: 20,
+  },
+  dateText: {
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "bold",
+    letterSpacing: 1,
+  },
   statusBox: {
     backgroundColor: "#1C1C1E",
     padding: 20,

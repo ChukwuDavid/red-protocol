@@ -1,4 +1,4 @@
-import { differenceInDays, addDays } from "date-fns";
+import { differenceInDays } from "date-fns";
 
 export type TacticalStatus = {
   phase: string;
@@ -11,14 +11,15 @@ export type TacticalStatus = {
 
 export const getTacticalIntel = (
   lastPeriodDate: string | null,
-  cycleLength: number
+  cycleLength: number,
+  periodDuration: number = 5 // New parameter
 ): TacticalStatus => {
   if (!lastPeriodDate) {
     return {
       phase: "NO DATA",
       weather: "Offline",
-      message: "System waiting for initial input.",
-      actionItem: "Tap the button to log Start Date.",
+      message: "System waiting for synchronization.",
+      actionItem: "Tap a date on the calendar to log Start Date.",
       color: "#8E8E93",
       icon: "question",
     };
@@ -28,20 +29,19 @@ export const getTacticalIntel = (
   const lastDate = new Date(lastPeriodDate);
   const daysPassed = differenceInDays(today, lastDate);
 
-  // SANITY CHECK: If it's been 40+ days, we missed a log.
-  if (daysPassed > 40) {
+  if (daysPassed > 45) {
     return {
       phase: "OVERDUE",
       weather: "Data Stale",
-      message: "Cycle is longer than expected.",
-      actionItem: "Check in with partner or update log.",
+      message: "Cycle input required. Predictions paused.",
+      actionItem: "Update log manually below.",
       color: "#8E8E93",
       icon: "alert-circle",
     };
   }
 
-  // PHASE 1: MENSTRUATION (Days 0-5)
-  if (daysPassed >= 0 && daysPassed <= 5) {
+  // PHASE 1: MENSTRUATION (Dynamic Duration)
+  if (daysPassed >= 0 && daysPassed < periodDuration) {
     return {
       phase: "MENSTRUATION",
       weather: "Thunderstorms",
@@ -52,8 +52,8 @@ export const getTacticalIntel = (
     };
   }
 
-  // PHASE 2: FOLLICULAR (Days 6-11)
-  if (daysPassed > 5 && daysPassed <= 11) {
+  // PHASE 2: FOLLICULAR
+  if (daysPassed >= periodDuration && daysPassed <= 11) {
     return {
       phase: "FOLLICULAR",
       weather: "Clear Skies",
@@ -64,7 +64,7 @@ export const getTacticalIntel = (
     };
   }
 
-  // PHASE 3: OVULATION (Days 12-16)
+  // PHASE 3: OVULATION
   if (daysPassed > 11 && daysPassed <= 16) {
     return {
       phase: "OVULATION",
@@ -76,8 +76,7 @@ export const getTacticalIntel = (
     };
   }
 
-  // PHASE 4: LUTEAL (Days 17-End)
-  // This is the danger zone.
+  // PHASE 4: LUTEAL
   return {
     phase: "LUTEAL",
     weather: "Overcast / Storm Watch",

@@ -3,27 +3,37 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
+  ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useCycleStore } from "../store/cycleStore";
 import { getTacticalIntel } from "../utils/translator";
+
+// Import our new components
+import CalendarWidget from "../components/CalendarWidget";
+import TacticalCard from "../components/TacticalCard";
+import SupplyDropButton from "../components/SupplyDropButton"; // <--- Import
 
 export default function DashboardScreen({ navigation }: any) {
   const {
     lastPeriodDate,
     cycleLength,
+    periodDuration,
     logPeriodStart,
-    getDaysUntilNext,
     partnerName,
   } = useCycleStore();
 
-  const intel = getTacticalIntel(lastPeriodDate, cycleLength);
-  const daysUntil = getDaysUntilNext();
+  const intel = getTacticalIntel(lastPeriodDate, cycleLength, periodDuration);
+
+  // Helper to open Logistics for a specific date
+  const openLogistics = (date: Date = new Date()) => {
+    navigation.navigate("Inventory", { date: date.toISOString() });
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="light-content" />
 
       {/* HEADER */}
@@ -37,50 +47,36 @@ export default function DashboardScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.mainContent}>
-        {/* THE RING */}
-        <View style={[styles.ring, { borderColor: intel.color }]}>
-          <Text style={[styles.ringNumber, { color: intel.color }]}>
-            {lastPeriodDate ? daysUntil : "--"}
-          </Text>
-          <Text style={styles.ringLabel}>DAYS T-MINUS</Text>
-        </View>
+      <ScrollView contentContainerStyle={styles.mainContent}>
+        {/* COMPONENT 1: The Tactical Calendar */}
+        <CalendarWidget
+          lastPeriodDate={lastPeriodDate}
+          cycleLength={cycleLength}
+          periodDuration={periodDuration}
+          onDateSelect={logPeriodStart}
+          onViewLog={openLogistics}
+          accentColor={intel.color}
+        />
 
-        {/* STATUS CARD */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.statusTitle, { color: intel.color }]}>
-              {intel.weather.toUpperCase()}
-            </Text>
-            <Text style={styles.phaseLabel}>{intel.phase}</Text>
-          </View>
-          <Text style={styles.message}>{intel.message}</Text>
-
-          <View style={styles.divider} />
-
-          <Text style={styles.actionLabel}>RECOMMENDED ACTION:</Text>
-          <Text style={styles.actionItem}>{intel.actionItem}</Text>
-        </View>
+        {/* COMPONENT 2: The Intel Card */}
+        <TacticalCard intel={intel} />
 
         {/* ACTION GRID */}
         <View style={styles.grid}>
-          {/* LOG BUTTON */}
+          {/* LOGISTICS BUTTON (Defaults to Today) */}
           <TouchableOpacity
-            onPress={() => logPeriodStart(new Date())}
-            style={[styles.btn, styles.logBtn]}
-          >
-            <Text style={styles.btnText}>LOG START</Text>
-          </TouchableOpacity>
-
-          {/* LOGISTICS BUTTON */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Inventory")}
+            onPress={() => openLogistics(new Date())}
             style={[styles.btn, styles.inventoryBtn]}
           >
-            <Text style={styles.btnText}>LOGISTICS</Text>
+            <Text style={styles.btnText}>OPEN TODAY'S CHECKLIST</Text>
           </TouchableOpacity>
         </View>
-      </View>
+
+        {/* COMPONENT 3: THE PANIC BUTTON */}
+        <View style={{ marginTop: 20 }}>
+          <SupplyDropButton appName="chowdeck" />
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -96,49 +92,7 @@ const styles = StyleSheet.create({
   subHeader: { color: "#8E8E93", fontSize: 10, letterSpacing: 2 },
   headerTitle: { color: "#FFF", fontSize: 20, fontWeight: "bold" },
   settingsIcon: { fontSize: 24 },
-  mainContent: {
-    flex: 1,
-    padding: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ring: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    borderWidth: 4,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  ringNumber: { fontSize: 60, fontWeight: "bold" },
-  ringLabel: { color: "#8E8E93", fontSize: 12, letterSpacing: 2, marginTop: 5 },
-  card: {
-    backgroundColor: "#1C1C1E",
-    width: "100%",
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 30,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  statusTitle: { fontSize: 18, fontWeight: "bold" },
-  phaseLabel: { color: "#555", fontSize: 12, fontWeight: "bold" },
-  message: { color: "#DDD", fontSize: 16, lineHeight: 24 },
-  divider: { height: 1, backgroundColor: "#333", marginVertical: 15 },
-  actionLabel: {
-    color: "#8E8E93",
-    fontSize: 10,
-    letterSpacing: 1,
-    marginBottom: 5,
-  },
-  actionItem: { color: "#FFF", fontSize: 14, fontWeight: "600" },
-
-  /* New Grid for Buttons */
+  mainContent: { padding: 20, paddingBottom: 50 }, // Added paddingBottom for scrolling space
   grid: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -152,7 +106,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
   },
-  logBtn: { backgroundColor: "#333", borderColor: "#444" },
   inventoryBtn: { backgroundColor: "#1C1C1E", borderColor: "#333" },
   btnText: { color: "#FFF", fontWeight: "bold", letterSpacing: 1 },
 });
