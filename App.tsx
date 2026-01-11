@@ -8,8 +8,9 @@ import { COLORS } from "./src/constants/Theme";
 import DashboardScreen from "./src/screens/DashboardScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import InventoryScreen from "./src/screens/InventoryScreen";
-import CalendarScreen from "./src/screens/CalendarScreen"; // <--- New
-import IntelScreen from "./src/screens/IntelScreen"; // <--- New
+import CalendarScreen from "./src/screens/CalendarScreen";
+import IntelScreen from "./src/screens/IntelScreen";
+import HistoryScreen from "./src/screens/HistoryScreen"; // <--- New
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +32,7 @@ export default function App() {
             <Stack.Screen name="Inventory" component={InventoryScreen} />
             <Stack.Screen name="Calendar" component={CalendarScreen} />
             <Stack.Screen name="Intel" component={IntelScreen} />
+            <Stack.Screen name="History" component={HistoryScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaView>

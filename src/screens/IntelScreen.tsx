@@ -70,21 +70,23 @@ export default function IntelScreen({ navigation }: any) {
         <View style={styles.divider} />
 
         <Text style={styles.sectionTitle}>ARCHIVES</Text>
+
+        {/* 3. HISTORY LOG - ACTIVATED */}
         <TouchableOpacity
-          style={[styles.card, { opacity: 0.5 }]}
-          disabled={true}
+          style={styles.card}
+          onPress={() => navigation.navigate("History")}
         >
           <View style={[styles.iconBox, { backgroundColor: "#333" }]}>
             <Text style={styles.icon}>🗄️</Text>
           </View>
           <View style={styles.cardContent}>
             <Text style={styles.cardTitle}>HISTORY LOG</Text>
-            <Text style={styles.cardSub}>Coming Soon</Text>
+            <Text style={styles.cardSub}>View Past Operations</Text>
           </View>
+          <Text style={styles.arrow}>→</Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Comms Modal lives here now */}
       <TacticalCommsModal
         visible={commsVisible}
         onClose={() => setCommsVisible(false)}

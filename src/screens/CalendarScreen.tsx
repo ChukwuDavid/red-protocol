@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   StyleSheet,
   StatusBar,
+  ScrollView,
 } from "react-native";
 import { COLORS, LAYOUT, SPACING } from "../constants/Theme";
 import { useCycleStore } from "../store/cycleStore";
@@ -49,29 +50,56 @@ export default function CalendarScreen({ navigation }: any) {
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.content}>
-        <Text style={styles.subtitle}>CYCLE TIMELINE & PROJECTIONS</Text>
+      <ScrollView
+        style={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          <Text style={styles.subtitle}>CYCLE TIMELINE & PROJECTIONS</Text>
 
-        <View style={styles.calendarContainer}>
-          <CalendarWidget
-            lastPeriodDate={lastPeriodDate}
-            cycleLength={cycleLength}
-            periodDuration={periodDuration}
-            symptoms={symptoms}
-            onDateSelect={logPeriodStart}
-            onViewLog={handleViewLog}
-            onLogIncident={handleLogIncident}
-            accentColor={intel.color}
-          />
-        </View>
+          <View style={styles.calendarContainer}>
+            <CalendarWidget
+              lastPeriodDate={lastPeriodDate}
+              cycleLength={cycleLength}
+              periodDuration={periodDuration}
+              symptoms={symptoms}
+              onDateSelect={logPeriodStart}
+              onViewLog={handleViewLog}
+              onLogIncident={handleLogIncident}
+              accentColor={intel.color}
+            />
+          </View>
 
-        <View style={styles.legendContainer}>
-          <LegendItem color={COLORS.primary} label="MAINTENANCE (PERIOD)" />
-          <LegendItem color={COLORS.success} label="HIGH ENERGY (FOLLICULAR)" />
-          <LegendItem color={COLORS.purple} label="PEAK (OVULATION)" />
-          <LegendItem color={COLORS.warning} label="CAUTION (LUTEAL)" />
+          <Text style={styles.legendHeader}>FIELD INTELLIGENCE</Text>
+
+          <View style={styles.legendContainer}>
+            <LegendItem
+              color={COLORS.primary}
+              label="MAINTENANCE (PERIOD)"
+              intel="Biological system flush. Oestrogen and Progesterone are at baseline. Physical energy is low, and inflammation may cause discomfort."
+              move="Minimize external stress. Provide high-value comfort assets (heat, hydration, chocolate) without being asked. Be the silent support."
+            />
+            <LegendItem
+              color={COLORS.success}
+              label="HIGH ENERGY (FOLLICULAR)"
+              intel="The reboot phase. Oestrogen begins its climb, boosting brain function, mood, and physical stamina. Brain fog usually clears here."
+              move="Optimal window for 'New' experiences. Plan challenging dates, hiking, or social outings. She's feeling more capable and adventurous."
+            />
+            <LegendItem
+              color={COLORS.purple}
+              label="PEAK PERFORMANCE (OVULATION)"
+              intel="The biological peak. Oestrogen and Testosterone surge. Social confidence, verbal fluency, and energy are at maximum levels."
+              move="Social butterfly window. High-energy social events and ambitious dates are winning plays here. This is her most confident phase."
+            />
+            <LegendItem
+              color={COLORS.warning}
+              label="CAUTION (LUTEAL)"
+              intel="The Storm Watch. Progesterone takes over. Cravings, mood sensitivity, and fatigue often rise as the body prepares for the next reset."
+              move="Maximum buffer required. Practice extreme active listening. Stock the pantry with her favorites before the cravings hit. Patience is your primary weapon."
+            />
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       <SymptomModal
         visible={symptomVisible}
@@ -82,10 +110,34 @@ export default function CalendarScreen({ navigation }: any) {
   );
 }
 
-const LegendItem = ({ color, label }: { color: string; label: string }) => (
+const LegendItem = ({
+  color,
+  label,
+  intel,
+  move,
+}: {
+  color: string;
+  label: string;
+  intel: string;
+  move: string;
+}) => (
   <View style={styles.legendItem}>
-    <View style={[styles.dot, { backgroundColor: color }]} />
-    <Text style={styles.legendText}>{label}</Text>
+    <View style={styles.legendRow}>
+      <View style={[styles.dot, { backgroundColor: color }]} />
+      <Text style={[styles.legendLabel, { color: color }]}>{label}</Text>
+    </View>
+    <View style={styles.legendDetailBox}>
+      <Text style={styles.intelText}>
+        <Text style={styles.boldLabel}>INTEL: </Text>
+        {intel}
+      </Text>
+      <Text style={styles.moveText}>
+        <Text style={[styles.boldLabel, { color: "#FFF" }]}>
+          TACTICAL MOVE:{" "}
+        </Text>
+        {move}
+      </Text>
+    </View>
   </View>
 );
 
@@ -107,7 +159,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     letterSpacing: 2,
   },
-  content: { flex: 1, padding: SPACING.m },
+  scrollContent: { flex: 1 },
+  content: { padding: SPACING.m },
   subtitle: {
     color: COLORS.subtext,
     fontSize: 12,
@@ -116,17 +169,52 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   calendarContainer: {
-    flex: 1,
+    marginBottom: SPACING.xl,
+  },
+  legendHeader: {
+    color: COLORS.subtext,
+    fontSize: 10,
+    letterSpacing: 3,
+    fontWeight: "bold",
+    marginBottom: SPACING.m,
+    paddingLeft: SPACING.s,
   },
   legendContainer: {
-    padding: SPACING.m,
+    gap: SPACING.m,
+    paddingBottom: SPACING.xl,
+  },
+  legendItem: {
     backgroundColor: COLORS.surface,
     borderRadius: LAYOUT.borderRadius,
-    marginTop: SPACING.m,
+    padding: SPACING.m,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  legendItem: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
-  legendText: { color: COLORS.subtext, fontSize: 10, fontWeight: "bold" },
+  legendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: SPACING.s,
+  },
+  dot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
+  legendLabel: { fontSize: 12, fontWeight: "900", letterSpacing: 1 },
+  legendDetailBox: {
+    marginTop: 4,
+  },
+  intelText: {
+    color: "#CCC",
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  moveText: {
+    color: COLORS.subtext,
+    fontSize: 13,
+    lineHeight: 18,
+    fontStyle: "italic",
+  },
+  boldLabel: {
+    fontWeight: "bold",
+    fontSize: 11,
+    letterSpacing: 0.5,
+  },
 });
