@@ -15,7 +15,11 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["chowdeck", "foodcourt", "whatsapp"]
+        "LSApplicationQueriesSchemes": [
+          "chowdeck",
+          "foodcourt",
+          "whatsapp"
+        ]
       }
     },
     "android": {
@@ -28,6 +32,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }
