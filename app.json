@@ -13,7 +13,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["chowdeck", "foodcourt", "whatsapp"]
+      }
     },
     "android": {
       "adaptiveIcon": {

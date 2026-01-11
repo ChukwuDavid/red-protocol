@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,9 @@ import { getTacticalIntel } from "../utils/translator";
 // Import our new components
 import CalendarWidget from "../components/CalendarWidget";
 import TacticalCard from "../components/TacticalCard";
-import SupplyDropButton from "../components/SupplyDropButton"; // <--- Import
+import SupplyDropButton from "../components/SupplyDropButton";
+import TacticalCommsModal from "../components/TacticalCommsModal";
+import SupplyDropModal from "../components/SupplyDropModal"; // <--- New Import
 
 export default function DashboardScreen({ navigation }: any) {
   const {
@@ -26,6 +28,10 @@ export default function DashboardScreen({ navigation }: any) {
   } = useCycleStore();
 
   const intel = getTacticalIntel(lastPeriodDate, cycleLength, periodDuration);
+
+  // State for Modals
+  const [commsVisible, setCommsVisible] = useState(false);
+  const [supplyVisible, setSupplyVisible] = useState(false); // <--- New State
 
   // Helper to open Logistics for a specific date
   const openLogistics = (date: Date = new Date()) => {
@@ -61,9 +67,17 @@ export default function DashboardScreen({ navigation }: any) {
         {/* COMPONENT 2: The Intel Card */}
         <TacticalCard intel={intel} />
 
+        {/* COMPONENT 3: TACTICAL COMMS (AI DIPLOMAT) */}
+        <TouchableOpacity
+          style={styles.commsBtn}
+          onPress={() => setCommsVisible(true)}
+        >
+          <Text style={styles.commsIcon}>💬</Text>
+          <Text style={styles.commsText}>GENERATE INTEL (DRAFTS)</Text>
+        </TouchableOpacity>
+
         {/* ACTION GRID */}
         <View style={styles.grid}>
-          {/* LOGISTICS BUTTON (Defaults to Today) */}
           <TouchableOpacity
             onPress={() => openLogistics(new Date())}
             style={[styles.btn, styles.inventoryBtn]}
@@ -72,11 +86,27 @@ export default function DashboardScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* COMPONENT 3: THE PANIC BUTTON */}
+        {/* COMPONENT 4: THE PANIC BUTTON */}
+        {/* Now triggers the modal instead of acting directly */}
         <View style={{ marginTop: 20 }}>
-          <SupplyDropButton appName="chowdeck" />
+          <SupplyDropButton onPress={() => setSupplyVisible(true)} />
         </View>
       </ScrollView>
+
+      {/* MODALS */}
+
+      {/* AI Diplomat */}
+      <TacticalCommsModal
+        visible={commsVisible}
+        onClose={() => setCommsVisible(false)}
+        phase={intel.phase}
+      />
+
+      {/* New Supply Drop Modal */}
+      <SupplyDropModal
+        visible={supplyVisible}
+        onClose={() => setSupplyVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -92,12 +122,14 @@ const styles = StyleSheet.create({
   subHeader: { color: "#8E8E93", fontSize: 10, letterSpacing: 2 },
   headerTitle: { color: "#FFF", fontSize: 20, fontWeight: "bold" },
   settingsIcon: { fontSize: 24 },
-  mainContent: { padding: 20, paddingBottom: 50 }, // Added paddingBottom for scrolling space
+  mainContent: { padding: 20, paddingBottom: 50 },
+
   grid: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
     gap: 15,
+    marginTop: 15,
   },
   btn: {
     flex: 1,
@@ -108,4 +140,19 @@ const styles = StyleSheet.create({
   },
   inventoryBtn: { backgroundColor: "#1C1C1E", borderColor: "#333" },
   btnText: { color: "#FFF", fontWeight: "bold", letterSpacing: 1 },
+
+  // Styles for Comms Button
+  commsBtn: {
+    flexDirection: "row",
+    backgroundColor: "#333",
+    padding: 15,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 5,
+    borderWidth: 1,
+    borderColor: "#555",
+  },
+  commsIcon: { fontSize: 18, marginRight: 10 },
+  commsText: { color: "#FFF", fontWeight: "bold", letterSpacing: 1 },
 });

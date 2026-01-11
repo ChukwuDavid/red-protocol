@@ -1,68 +1,16 @@
 import React from "react";
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  View,
-  Linking,
-  Alert,
-  Platform,
-} from "react-native";
+import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 
 interface SupplyDropProps {
-  appName?: "chowdeck" | "foodcourt" | "uber";
+  onPress: () => void; // Now just accepts a click handler
+  appName?: string; // Kept for backward compatibility but unused for logic now
 }
 
-export default function SupplyDropButton({
-  appName = "chowdeck",
-}: SupplyDropProps) {
-  const handlePress = async () => {
-    // 1. Define the search query (Tactical Supplies)
-    const query = "Chocolate ice cream comfort food";
-    const encodedQuery = encodeURIComponent(query);
-
-    // 2. Define URLs for specific apps
-    // Note: Deep link schemes can vary. We default to web search fallback if app fails.
-    let url = "";
-
-    if (appName === "chowdeck") {
-      // ChowDeck doesn't have a public search API doc, so we default to opening the app or site
-      // Trying a generic web fallback for specific items if app scheme isn't known
-      url = `https://chowdeck.com/search?q=${encodedQuery}`;
-    } else if (appName === "foodcourt") {
-      url = `https://www.foodcourt.app/`; // General open
-    } else {
-      // Fallback to Google Maps or generic search nearby
-      url = `https://www.google.com/maps/search/chocolate+delivery+near+me`;
-    }
-
-    // 3. Attempt to open
-    const supported = await Linking.canOpenURL(url);
-
-    if (supported || Platform.OS === "web") {
-      await Linking.openURL(url);
-    } else {
-      // If the specific app link fails, fall back to a generic browser search
-      const fallbackUrl = `https://www.google.com/search?q=${encodedQuery}+delivery+near+me`;
-      await Linking.openURL(fallbackUrl);
-    }
-  };
-
-  const confirmDrop = () => {
-    Alert.alert(
-      "CONFIRM SUPPLY DROP",
-      "Initiating emergency protocol. This will open delivery channels for immediate resupply.",
-      [
-        { text: "ABORT", style: "cancel" },
-        { text: "EXECUTE", onPress: handlePress, style: "destructive" },
-      ]
-    );
-  };
-
+export default function SupplyDropButton({ onPress }: SupplyDropProps) {
   return (
     <TouchableOpacity
       style={styles.container}
-      onPress={confirmDrop}
+      onPress={onPress}
       activeOpacity={0.8}
     >
       <View style={styles.border}>
@@ -93,8 +41,6 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   stripes: {
-    // In a real app we might use an image background for hazard stripes,
-    // but this is a solid color for simplicity.
     position: "absolute",
     top: 0,
     left: 0,
