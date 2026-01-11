@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   Linking,
   Platform,
-  Image,
 } from "react-native";
+import { COLORS, LAYOUT, SPACING } from "../constants/Theme";
 
 interface SupplyDropModalProps {
   visible: boolean;
@@ -20,12 +20,10 @@ export default function SupplyDropModal({
   onClose,
 }: SupplyDropModalProps) {
   const openApp = async (appName: "chowdeck" | "foodcourt") => {
-    // 1. CONFIGURATION (You must replace these with real IDs later)
     const config = {
       chowdeck: {
         name: "ChowDeck",
-        scheme: "chowdeck://", // Hypothetical scheme
-        // Fallback to store search if specific ID is unknown
+        scheme: "chowdeck://",
         storeUrl:
           Platform.OS === "ios"
             ? "https://apps.apple.com/us/search?term=chowdeck"
@@ -33,35 +31,21 @@ export default function SupplyDropModal({
       },
       foodcourt: {
         name: "Food Court",
-        scheme: "foodcourt://", // Hypothetical scheme
+        scheme: "foodcourt://",
         storeUrl:
           Platform.OS === "ios"
             ? "https://apps.apple.com/us/search?term=food+court"
             : "market://search?q=food+court&c=apps",
       },
     };
-
     const target = config[appName];
-
     try {
-      // 2. CHECK IF INSTALLED
-      // Note: On Android 11+, canOpenURL often returns false even if installed due to privacy.
-      // We try to open it directly first in a try/catch block.
       const supported = await Linking.canOpenURL(target.scheme);
-
-      if (supported) {
-        await Linking.openURL(target.scheme);
-      } else {
-        // 3. FALLBACK TO STORE
-        // If canOpenURL failed, or we just want to force store logic
-        throw new Error("App not supported/installed");
-      }
+      if (supported) await Linking.openURL(target.scheme);
+      else throw new Error("App not supported/installed");
     } catch (error) {
-      console.log(`Failed to open ${target.name}, redirecting to store...`);
-      // Open the App Store / Play Store page
       await Linking.openURL(target.storeUrl);
     }
-
     onClose();
   };
 
@@ -86,7 +70,6 @@ export default function SupplyDropModal({
           </Text>
 
           <View style={styles.optionsContainer}>
-            {/* OPTION 1: CHOWDECK */}
             <TouchableOpacity
               style={[styles.optionBtn, { borderColor: "#0C9463" }]}
               onPress={() => openApp("chowdeck")}
@@ -100,7 +83,6 @@ export default function SupplyDropModal({
               </View>
             </TouchableOpacity>
 
-            {/* OPTION 2: FOOD COURT */}
             <TouchableOpacity
               style={[styles.optionBtn, { borderColor: "#FF6B6B" }]}
               onPress={() => openApp("foodcourt")}
@@ -129,15 +111,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.85)",
+    backgroundColor: "rgba(0,0,0,0.9)",
   },
   modalView: {
     width: "85%",
-    backgroundColor: "#1C1C1E",
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: COLORS.border,
     alignItems: "center",
   },
   header: {
@@ -148,7 +130,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   headerTitle: {
-    color: "#FFF",
+    color: COLORS.text,
     fontSize: 16,
     fontWeight: "bold",
     letterSpacing: 1,
@@ -159,51 +141,31 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: "#FF453A",
+    borderColor: COLORS.primary,
   },
-  warningText: {
-    color: "#FF453A",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
+  warningText: { color: COLORS.primary, fontSize: 10, fontWeight: "bold" },
   subText: {
-    color: "#8E8E93",
+    color: COLORS.subtext,
     fontSize: 14,
     marginBottom: 25,
     textAlign: "center",
   },
-  optionsContainer: {
-    width: "100%",
-    marginBottom: 10,
-  },
+  optionsContainer: { width: "100%", marginBottom: 10 },
   optionBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#111",
+    backgroundColor: COLORS.background,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 15,
   },
-  icon: {
-    fontSize: 32,
-    marginRight: 15,
-  },
-  optionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    letterSpacing: 1,
-  },
-  optionSub: {
-    color: "#666",
-    fontSize: 12,
-  },
-  cancelBtn: {
-    paddingVertical: 10,
-    marginTop: 10,
-  },
+  icon: { fontSize: 32, marginRight: 15 },
+  optionTitle: { fontSize: 18, fontWeight: "bold", letterSpacing: 1 },
+  optionSub: { color: "#666", fontSize: 12 },
+  cancelBtn: { paddingVertical: 10, marginTop: 10 },
   cancelText: {
-    color: "#555",
+    color: COLORS.subtext,
     fontWeight: "bold",
     fontSize: 12,
     letterSpacing: 1,

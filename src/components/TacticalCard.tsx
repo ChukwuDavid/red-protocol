@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-
-// We import the type so we know what data to expect
+import { COLORS, LAYOUT, SPACING } from "../constants/Theme";
 import { TacticalStatus } from "../utils/translator";
 
 interface TacticalCardProps {
@@ -15,7 +14,11 @@ export default function TacticalCard({ intel }: TacticalCardProps) {
         <Text style={[styles.statusTitle, { color: intel.color }]}>
           {intel.weather.toUpperCase()}
         </Text>
-        <Text style={styles.phaseLabel}>{intel.phase}</Text>
+        <View style={[styles.phaseBadge, { borderColor: intel.color }]}>
+          <Text style={[styles.phaseLabel, { color: intel.color }]}>
+            {intel.phase}
+          </Text>
+        </View>
       </View>
 
       <Text style={styles.message}>{intel.message}</Text>
@@ -30,25 +33,32 @@ export default function TacticalCard({ intel }: TacticalCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#1C1C1E",
+    backgroundColor: COLORS.surface,
     width: "100%",
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 30,
+    padding: LAYOUT.cardPadding,
+    borderRadius: LAYOUT.borderRadius,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: SPACING.m,
   },
   statusTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+  phaseBadge: {
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
   phaseLabel: {
-    color: "#555",
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "bold",
   },
   message: {
@@ -58,17 +68,17 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#333",
-    marginVertical: 15,
+    backgroundColor: COLORS.border,
+    marginVertical: SPACING.m,
   },
   actionLabel: {
-    color: "#8E8E93",
+    color: COLORS.subtext,
     fontSize: 10,
     letterSpacing: 1,
     marginBottom: 5,
   },
   actionItem: {
-    color: "#FFF",
+    color: COLORS.text,
     fontSize: 14,
     fontWeight: "600",
   },

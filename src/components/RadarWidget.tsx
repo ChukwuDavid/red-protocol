@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { format } from "date-fns";
 import { RadarPrediction } from "../utils/radar";
+import { COLORS, LAYOUT } from "../constants/Theme";
 
 interface RadarWidgetProps {
   predictions: RadarPrediction[];
@@ -9,8 +10,6 @@ interface RadarWidgetProps {
 
 export default function RadarWidget({ predictions }: RadarWidgetProps) {
   if (predictions.length === 0) return null;
-
-  // We only show the nearest prediction to avoid clutter
   const topPrediction = predictions[0];
 
   return (
@@ -33,7 +32,6 @@ export default function RadarWidget({ predictions }: RadarWidgetProps) {
         <View style={styles.details}>
           <Text style={styles.warningLabel}>PROJECTED INCIDENTS:</Text>
           <View style={styles.tagRow}>
-            {/* FIX: Added explicit types to callback parameters */}
             {topPrediction.incidents.map((incident: string, index: number) => (
               <View key={index} style={styles.incidentTag}>
                 <Text style={styles.incidentText}>
@@ -54,9 +52,9 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 69, 58, 0.5)", // Red tint
+    borderColor: COLORS.danger,
     backgroundColor: "rgba(255, 69, 58, 0.05)",
-    borderRadius: 12,
+    borderRadius: LAYOUT.borderRadius,
     padding: 15,
   },
   headerRow: {
@@ -64,72 +62,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  icon: {
-    fontSize: 16,
-    marginRight: 10,
-  },
+  icon: { fontSize: 16, marginRight: 10 },
   title: {
-    color: "#FF453A",
+    color: COLORS.primary,
     fontSize: 12,
     fontWeight: "bold",
     letterSpacing: 2,
   },
-  content: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  timeBox: {
-    alignItems: "center",
-    paddingRight: 15,
-  },
-  timeValue: {
-    color: "#FFF",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  timeLabel: {
-    color: "#8E8E93",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
+  content: { flexDirection: "row", alignItems: "center" },
+  timeBox: { alignItems: "center", paddingRight: 15 },
+  timeValue: { color: COLORS.text, fontSize: 20, fontWeight: "bold" },
+  timeLabel: { color: COLORS.subtext, fontSize: 10, fontWeight: "bold" },
   divider: {
     width: 1,
     height: "100%",
-    backgroundColor: "#FF453A",
+    backgroundColor: COLORS.primary,
     opacity: 0.3,
     marginRight: 15,
   },
-  details: {
-    flex: 1,
-  },
+  details: { flex: 1 },
   warningLabel: {
-    color: "#FF453A",
+    color: COLORS.primary,
     fontSize: 10,
     fontWeight: "bold",
     marginBottom: 5,
   },
-  tagRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 5,
-    marginBottom: 5,
-  },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 5, marginBottom: 5 },
   incidentTag: {
     backgroundColor: "#321414",
     borderWidth: 1,
-    borderColor: "#FF453A",
+    borderColor: COLORS.primary,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  incidentText: {
-    color: "#FF453A",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  advice: {
-    color: "#8E8E93",
-    fontSize: 10,
-    fontStyle: "italic",
-  },
+  incidentText: { color: COLORS.primary, fontSize: 10, fontWeight: "bold" },
+  advice: { color: COLORS.subtext, fontSize: 10, fontStyle: "italic" },
 });

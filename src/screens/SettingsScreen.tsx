@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { useCycleStore } from "../store/cycleStore";
+import { COLORS, LAYOUT, SPACING } from "../constants/Theme";
 
 export default function SettingsScreen({ navigation }: any) {
   const {
@@ -36,7 +37,7 @@ export default function SettingsScreen({ navigation }: any) {
             style={styles.input}
             value={partnerName}
             onChangeText={setPartnerName}
-            placeholderTextColor="#555"
+            placeholderTextColor={COLORS.placeholder}
           />
         </View>
 
@@ -77,50 +78,65 @@ export default function SettingsScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0D0D0D" },
+  container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 20,
+    padding: SPACING.l,
     alignItems: "center",
   },
-  backText: { color: "#8E8E93", fontWeight: "bold" },
-  title: { color: "#FFF", fontSize: 16, letterSpacing: 2, fontWeight: "bold" },
-  content: { padding: 20 },
-  section: { marginBottom: 30 },
-  label: { color: "#8E8E93", fontSize: 12, marginBottom: 10, letterSpacing: 1 },
-  subLabel: { color: "#555", fontSize: 12, marginBottom: 15 },
-  input: {
-    backgroundColor: "#1C1C1E",
-    color: "#FFF",
-    padding: 15,
-    borderRadius: 8,
+  backText: { color: COLORS.subtext, fontWeight: "bold" },
+  title: {
+    color: COLORS.text,
     fontSize: 16,
+    letterSpacing: 2,
+    fontWeight: "bold",
+  },
+  content: { padding: SPACING.l },
+  section: { marginBottom: SPACING.xl },
+  label: {
+    color: COLORS.subtext,
+    fontSize: 12,
+    marginBottom: 10,
+    letterSpacing: 1,
+  },
+  subLabel: { color: "#666", fontSize: 12, marginBottom: 15 },
+  input: {
+    backgroundColor: COLORS.surface,
+    color: COLORS.text,
+    padding: 15,
+    borderRadius: LAYOUT.borderRadius,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#1C1C1E",
-    borderRadius: 8,
+    backgroundColor: COLORS.surface,
+    borderRadius: LAYOUT.borderRadius,
     padding: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   adjustBtn: {
-    backgroundColor: "#333",
+    backgroundColor: COLORS.surfaceHighlight,
     width: 50,
     height: 50,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
   },
-  btnText: { color: "#FFF", fontSize: 24 },
-  valueText: { color: "#FFF", fontSize: 24, fontWeight: "bold" },
+  btnText: { color: COLORS.text, fontSize: 24 },
+  valueText: { color: COLORS.text, fontSize: 24, fontWeight: "bold" },
   resetBtn: {
-    borderColor: "#FF453A",
+    borderColor: COLORS.primary,
     borderWidth: 1,
     padding: 15,
-    borderRadius: 8,
+    borderRadius: LAYOUT.borderRadius,
     alignItems: "center",
+    backgroundColor: COLORS.danger,
   },
-  resetText: { color: "#FF453A", fontWeight: "bold", letterSpacing: 1 },
+  resetText: { color: COLORS.primary, fontWeight: "bold", letterSpacing: 1 },
 });

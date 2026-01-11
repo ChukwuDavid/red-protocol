@@ -11,12 +11,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useCycleStore } from "../store/cycleStore";
 import { getTacticalIntel } from "../utils/translator";
 import { getRadarPredictions } from "../utils/radar";
+import { COLORS, LAYOUT, SPACING } from "../constants/Theme";
 
 // Components
 import CalendarWidget from "../components/CalendarWidget";
 import TacticalCard from "../components/TacticalCard";
 import SupplyDropButton from "../components/SupplyDropButton";
-import TacticalCommsModal from "../components/TacticalCommsModal";
 import SupplyDropModal from "../components/SupplyDropModal";
 import SymptomModal from "../components/SymptomModal";
 import RadarWidget from "../components/RadarWidget";
@@ -28,7 +28,7 @@ export default function DashboardScreen({ navigation }: any) {
     periodDuration,
     logPeriodStart,
     partnerName,
-    symptoms, // <--- Get symptoms from store
+    symptoms,
   } = useCycleStore();
 
   const intel = getTacticalIntel(lastPeriodDate, cycleLength, periodDuration);
@@ -38,18 +38,14 @@ export default function DashboardScreen({ navigation }: any) {
     symptoms
   );
 
-  // State for Modals
-  const [commsVisible, setCommsVisible] = useState(false);
   const [supplyVisible, setSupplyVisible] = useState(false);
   const [symptomVisible, setSymptomVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Helper to open Logistics
   const openLogistics = (date: Date = new Date()) => {
     navigation.navigate("Inventory", { date: date.toISOString() });
   };
 
-  // Helper to open Symptom Logger
   const openSymptomLogger = (date: Date) => {
     setSelectedDate(date);
     setSymptomVisible(true);
@@ -57,70 +53,83 @@ export default function DashboardScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
       {/* HEADER */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.subHeader}>MONITORING</Text>
+          <Text style={styles.subHeader}>STATUS MONITOR</Text>
           <Text style={styles.headerTitle}>{partnerName.toUpperCase()}</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Settings")}
+          style={styles.settingsBtn}
+        >
           <Text style={styles.settingsIcon}>⚙️</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.mainContent}>
-        {/* COMPONENT 0: Radar Widget (Shows only if threats detected) */}
-        <RadarWidget predictions={radarPredictions} />
+      <ScrollView
+        contentContainerStyle={styles.mainContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 1. RADAR WARNINGS */}
+        {radarPredictions.length > 0 && (
+          <View style={{ marginBottom: SPACING.l }}>
+            <RadarWidget predictions={radarPredictions} />
+          </View>
+        )}
 
-        {/* COMPONENT 1: The Tactical Calendar */}
-        <CalendarWidget
-          lastPeriodDate={lastPeriodDate}
-          cycleLength={cycleLength}
-          periodDuration={periodDuration}
-          symptoms={symptoms} // <--- Pass symptoms to calendar
-          onDateSelect={logPeriodStart}
-          onViewLog={openLogistics}
-          onLogIncident={openSymptomLogger}
-          accentColor={intel.color}
-        />
+        {/* 2. CALENDAR MAP PREVIEW */}
+        <View style={styles.section}>
+          <CalendarWidget
+            lastPeriodDate={lastPeriodDate}
+            cycleLength={cycleLength}
+            periodDuration={periodDuration}
+            symptoms={symptoms}
+            onDateSelect={logPeriodStart}
+            onViewLog={openLogistics}
+            onLogIncident={openSymptomLogger}
+            accentColor={intel.color}
+          />
+        </View>
 
-        {/* COMPONENT 2: The Intel Card */}
-        <TacticalCard intel={intel} />
+        {/* 3. INTEL CARD */}
+        <View style={styles.section}>
+          <TacticalCard intel={intel} />
+        </View>
 
-        {/* COMPONENT 3: TACTICAL COMMS */}
-        <TouchableOpacity
-          style={styles.commsBtn}
-          onPress={() => setCommsVisible(true)}
-        >
-          <Text style={styles.commsIcon}>💬</Text>
-          <Text style={styles.commsText}>GENERATE INTEL (DRAFTS)</Text>
-        </TouchableOpacity>
-
-        {/* ACTION GRID */}
-        <View style={styles.grid}>
+        {/* 4. MODULE NAVIGATION */}
+        <Text style={styles.sectionLabel}>TACTICAL MODULES</Text>
+        <View style={styles.moduleGrid}>
+          {/* Calendar Module */}
           <TouchableOpacity
-            onPress={() => openLogistics(new Date())}
-            style={[styles.btn, styles.inventoryBtn]}
+            style={styles.moduleCard}
+            onPress={() => navigation.navigate("Calendar")}
           >
-            <Text style={styles.btnText}>OPEN TODAY'S CHECKLIST</Text>
+            <Text style={styles.moduleIcon}>🗺️</Text>
+            <Text style={styles.moduleTitle}>TACTICAL MAP</Text>
+            <Text style={styles.moduleSub}>Full Timeline</Text>
+          </TouchableOpacity>
+
+          {/* Intel Module */}
+          <TouchableOpacity
+            style={styles.moduleCard}
+            onPress={() => navigation.navigate("Intel")}
+          >
+            <Text style={styles.moduleIcon}>🎒</Text>
+            <Text style={styles.moduleTitle}>FIELD GUIDE</Text>
+            <Text style={styles.moduleSub}>Logs & Comms</Text>
           </TouchableOpacity>
         </View>
 
-        {/* COMPONENT 4: THE PANIC BUTTON */}
-        <View style={{ marginTop: 20 }}>
+        {/* 5. PANIC BUTTON */}
+        <View style={{ marginTop: SPACING.l }}>
           <SupplyDropButton onPress={() => setSupplyVisible(true)} />
         </View>
       </ScrollView>
 
       {/* MODALS */}
-      <TacticalCommsModal
-        visible={commsVisible}
-        onClose={() => setCommsVisible(false)}
-        phase={intel.phase}
-      />
-
       <SupplyDropModal
         visible={supplyVisible}
         onClose={() => setSupplyVisible(false)}
@@ -136,46 +145,64 @@ export default function DashboardScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0D0D0D" },
+  container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 20,
+    paddingHorizontal: SPACING.l,
+    paddingTop: SPACING.l,
+    paddingBottom: SPACING.m,
     alignItems: "center",
   },
-  subHeader: { color: "#8E8E93", fontSize: 10, letterSpacing: 2 },
-  headerTitle: { color: "#FFF", fontSize: 20, fontWeight: "bold" },
-  settingsIcon: { fontSize: 24 },
-  mainContent: { padding: 20, paddingBottom: 50 },
-
-  grid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    gap: 15,
-    marginTop: 15,
+  subHeader: {
+    color: COLORS.subtext,
+    fontSize: 10,
+    letterSpacing: 2,
+    marginBottom: 4,
   },
-  btn: {
+  headerTitle: {
+    color: COLORS.text,
+    fontSize: 24,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  settingsBtn: {
+    padding: SPACING.s,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  settingsIcon: { fontSize: 20 },
+
+  mainContent: { padding: SPACING.l, paddingBottom: 50 },
+
+  section: { marginBottom: SPACING.l },
+  sectionLabel: {
+    color: COLORS.subtext,
+    fontSize: 12,
+    letterSpacing: 2,
+    marginBottom: SPACING.m,
+  },
+
+  moduleGrid: { flexDirection: "row", gap: SPACING.m, marginBottom: SPACING.l },
+  moduleCard: {
     flex: 1,
-    paddingVertical: 18,
-    borderRadius: 12,
+    backgroundColor: COLORS.surface,
+    padding: SPACING.l,
+    borderRadius: LAYOUT.borderRadius,
     alignItems: "center",
     borderWidth: 1,
+    borderColor: COLORS.border,
+    ...LAYOUT.cardShadow,
   },
-  inventoryBtn: { backgroundColor: "#1C1C1E", borderColor: "#333" },
-  btnText: { color: "#FFF", fontWeight: "bold", letterSpacing: 1 },
-
-  commsBtn: {
-    flexDirection: "row",
-    backgroundColor: "#333",
-    padding: 15,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 5,
-    borderWidth: 1,
-    borderColor: "#555",
+  moduleIcon: { fontSize: 32, marginBottom: SPACING.m },
+  moduleTitle: {
+    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: "bold",
+    letterSpacing: 1,
+    textAlign: "center",
   },
-  commsIcon: { fontSize: 18, marginRight: 10 },
-  commsText: { color: "#FFF", fontWeight: "bold", letterSpacing: 1 },
+  moduleSub: { color: COLORS.subtext, fontSize: 10, marginTop: 4 },
 });

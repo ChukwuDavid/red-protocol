@@ -10,6 +10,7 @@ import {
 import { AVAILABLE_INCIDENTS } from "../utils/radar";
 import { format } from "date-fns";
 import { useCycleStore } from "../store/cycleStore";
+import { COLORS, LAYOUT } from "../constants/Theme";
 
 interface SymptomModalProps {
   visible: boolean;
@@ -35,7 +36,6 @@ export default function SymptomModal({
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
-          {/* UNIFIED HEADER STYLE */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>LOG NEW INTEL</Text>
             <View style={styles.badge}>
@@ -83,17 +83,17 @@ export default function SymptomModal({
 const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
-    justifyContent: "center", // Centered (Uniform Style)
+    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.85)", // Unified Dark Dim
+    backgroundColor: "rgba(0,0,0,0.9)",
   },
   modalView: {
     width: "90%",
-    backgroundColor: "#1C1C1E",
-    borderRadius: 16, // Unified Radius
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: COLORS.border,
     maxHeight: "80%",
   },
   header: {
@@ -102,35 +102,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: COLORS.border,
     paddingBottom: 15,
   },
   headerTitle: {
-    color: "#FFF",
+    color: COLORS.text,
     fontSize: 16,
     fontWeight: "bold",
     letterSpacing: 2,
   },
   badge: {
-    backgroundColor: "#333",
+    backgroundColor: COLORS.surfaceHighlight,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
-  badgeText: {
-    color: "#FFF",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
+  badgeText: { color: COLORS.text, fontSize: 10, fontWeight: "bold" },
   instruction: {
-    color: "#8E8E93",
+    color: COLORS.subtext,
     fontSize: 14,
     marginBottom: 20,
     textAlign: "center",
   },
-  grid: {
-    marginBottom: 20,
-  },
+  grid: { marginBottom: 20 },
   gridContent: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -138,35 +132,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   tag: {
-    backgroundColor: "#111",
+    backgroundColor: COLORS.background,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 12, // Unified Tag Radius
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: COLORS.border,
   },
   activeTag: {
-    backgroundColor: "#321414", // Red Tint for active
-    borderColor: "#FF453A",
+    backgroundColor: "#321414",
+    borderColor: COLORS.primary,
   },
-  tagText: {
-    color: "#666",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  activeTagText: {
-    color: "#FF453A",
-    fontWeight: "bold",
-  },
+  tagText: { color: "#666", fontSize: 12, fontWeight: "600" },
+  activeTagText: { color: COLORS.primary, fontWeight: "bold" },
   closeBtn: {
-    backgroundColor: "#FFF",
+    backgroundColor: COLORS.text,
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
   },
-  closeText: {
-    color: "#000",
-    fontWeight: "bold",
-    letterSpacing: 1,
-  },
+  closeText: { color: "#000", fontWeight: "bold", letterSpacing: 1 },
 });

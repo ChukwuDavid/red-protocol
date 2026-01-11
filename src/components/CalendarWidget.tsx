@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  Dimensions,
+} from "react-native";
 import {
   format,
   startOfMonth,
@@ -11,6 +18,7 @@ import {
   isSameMonth,
   differenceInDays,
 } from "date-fns";
+import { COLORS, LAYOUT, SPACING } from "../constants/Theme";
 
 interface CalendarWidgetProps {
   lastPeriodDate: string | null;
@@ -22,6 +30,19 @@ interface CalendarWidgetProps {
   onLogIncident?: (date: Date) => void;
   accentColor: string;
 }
+
+// CALCULATION FIX:
+// Screen Width
+// - Dashboard Padding (SPACING.l * 2) -> 24 * 2 = 48
+// - Widget Internal Padding (10 * 2) -> 20
+// - Safety Buffer (2)
+// Total Deduction = 70px
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const WIDGET_PADDING = 10;
+const DASHBOARD_PADDING = SPACING.l;
+const AVAILABLE_WIDTH =
+  SCREEN_WIDTH - DASHBOARD_PADDING * 2 - WIDGET_PADDING * 2;
+const CELL_WIDTH = Math.floor(AVAILABLE_WIDTH / 7);
 
 export default function CalendarWidget({
   lastPeriodDate,
@@ -54,10 +75,10 @@ export default function CalendarWidget({
         ? daysSinceStart % cycleLength
         : (cycleLength + (daysSinceStart % cycleLength)) % cycleLength;
 
-    if (cycleDay < periodDuration) return "#FF453A";
-    if (cycleDay < 12) return "#32D74B";
-    if (cycleDay < 16) return "#BF5AF2";
-    return "#FFD60A";
+    if (cycleDay < periodDuration) return COLORS.primary;
+    if (cycleDay < 12) return COLORS.success;
+    if (cycleDay < 16) return COLORS.purple;
+    return COLORS.warning;
   };
 
   const handleDayPress = (day: Date) => {
@@ -82,70 +103,60 @@ export default function CalendarWidget({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={[styles.monthText, { color: accentColor }]}>
-          {format(today, "MMMM yyyy").toUpperCase()}
-        </Text>
-        <Text style={styles.legendText}>TAP DATE FOR OPTIONS</Text>
+        <Text style={styles.monthText}>{format(today, "MMMM yyyy")}</Text>
       </View>
 
+      {/* DAYS OF WEEK */}
       <View style={styles.row}>
         {weekDays.map((day, index) => (
-          <Text key={index} style={styles.weekDayText}>
-            {day}
-          </Text>
+          <View key={index} style={styles.weekDayCell}>
+            <Text style={styles.weekDayText}>{day}</Text>
+          </View>
         ))}
       </View>
 
+      {/* CALENDAR GRID */}
       <View style={styles.grid}>
         {calendarDays.map((day, index) => {
           const isCurrentMonth = isSameMonth(day, monthStart);
           const isToday = isSameDay(day, today);
           const statusColor = getDayStatusColor(day);
-          const focusOpacity = isToday ? 1 : isCurrentMonth ? 0.4 : 0.15;
 
           const dateKey = format(day, "yyyy-MM-dd");
           const hasSymptoms = symptoms[dateKey] && symptoms[dateKey].length > 0;
 
-          const dayStyle = [
-            styles.dayCell,
-            {
-              backgroundColor: isCurrentMonth
-                ? statusColor + "33"
-                : "transparent",
-              opacity: focusOpacity,
-            },
-          ];
-
           return (
             <TouchableOpacity
               key={day.toString()}
-              style={dayStyle}
+              style={[
+                styles.dayCell,
+                // Phase Highlight (Background Fill)
+                isCurrentMonth && { backgroundColor: statusColor + "15" },
+                // Today Circle
+                isToday && styles.todayCell,
+              ]}
               onPress={() => handleDayPress(day)}
             >
               <Text
                 style={[
                   styles.dayText,
-                  { color: isCurrentMonth ? "#FFF" : "#555" },
-                  isToday && {
-                    fontWeight: "bold",
-                    color: "#FFF",
-                    fontSize: 16,
-                  },
+                  !isCurrentMonth && styles.dimText,
+                  // Text color logic
+                  isCurrentMonth && { color: isToday ? "#000" : "#FFF" },
+                  isToday && { fontWeight: "bold" },
                 ]}
               >
                 {format(day, "d")}
               </Text>
 
+              {/* Dots Container (Symptom Marker) */}
               <View style={styles.dotsContainer}>
-                {isCurrentMonth && (
-                  <View
-                    style={[styles.dot, { backgroundColor: statusColor }]}
-                  />
-                )}
-
                 {isCurrentMonth && hasSymptoms && (
                   <View
-                    style={[styles.symptomDot, { backgroundColor: "#BF5AF2" }]}
+                    style={[
+                      styles.symptomDot,
+                      { backgroundColor: isToday ? "#000" : COLORS.purple },
+                    ]}
                   />
                 )}
               </View>
@@ -191,7 +202,7 @@ export default function CalendarWidget({
                   onPress={() => handleOptionSelect(onLogIncident)}
                 >
                   <Text style={styles.optionIcon}>⚠️</Text>
-                  <Text style={styles.optionText}>LOG INCIDENT</Text>
+                  <Text style={styles.optionText}>LOG SYMPTOMS</Text>
                 </TouchableOpacity>
               )}
 
@@ -219,88 +230,90 @@ export default function CalendarWidget({
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    backgroundColor: "#1C1C1E",
-    borderRadius: 16,
-    padding: 15,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#333",
+    backgroundColor: COLORS.surface,
+    borderRadius: LAYOUT.borderRadius,
+    paddingVertical: 20,
+    paddingHorizontal: WIDGET_PADDING,
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 20,
+    paddingHorizontal: 10,
   },
   monthText: {
-    fontSize: 16,
+    color: COLORS.text,
+    fontSize: 20,
     fontWeight: "bold",
-    letterSpacing: 1,
-  },
-  legendText: {
-    color: "#555",
-    fontSize: 10,
-    fontWeight: "bold",
+    letterSpacing: 0.5,
   },
   row: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "flex-start", // Changed to flex-start for grid alignment
     marginBottom: 10,
+    flexWrap: "wrap",
+  },
+  weekDayCell: {
+    width: CELL_WIDTH,
+    alignItems: "center",
   },
   weekDayText: {
-    color: "#8E8E93",
+    color: COLORS.subtext,
     fontSize: 12,
-    fontWeight: "bold",
-    width: 30,
-    textAlign: "center",
+    fontWeight: "600",
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-around",
+    justifyContent: "flex-start", // Aligns perfectly with the week row
+    // Remove rowGap if using fixed height cells, but keep for breathing room
+    // rowGap: 2,
   },
   dayCell: {
-    width: "13%",
-    aspectRatio: 1,
+    width: CELL_WIDTH,
+    height: 50, // Increased height for containment
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 5,
-    borderRadius: 8,
+    marginBottom: 2, // explicit margin instead of rowGap for consistency
+    borderRadius: 25, // Perfectly round for Today selection
+  },
+  todayCell: {
+    backgroundColor: COLORS.text,
+    borderRadius: 50,
   },
   dayText: {
-    fontSize: 14,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  dimText: {
+    color: "#333",
   },
   dotsContainer: {
+    position: "absolute", // Absolute position to not shift the number
+    bottom: 8,
     flexDirection: "row",
     gap: 2,
-    marginTop: 2,
-  },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
   },
   symptomDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    borderWidth: 0.5,
-    borderColor: "#FFF",
   },
   // Modal Styles
   centeredView: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.85)",
+    backgroundColor: "rgba(0,0,0,0.9)",
   },
   modalView: {
     width: "85%",
-    backgroundColor: "#1C1C1E",
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: COLORS.border,
     alignItems: "center",
   },
   modalHeader: {
@@ -310,23 +323,23 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: COLORS.border,
     paddingBottom: 15,
   },
   modalTitle: {
-    color: "#FFF",
+    color: COLORS.text,
     fontSize: 16,
     fontWeight: "bold",
     letterSpacing: 1,
   },
   modalBadge: {
-    backgroundColor: "#333",
+    backgroundColor: COLORS.surfaceHighlight,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   modalBadgeText: {
-    color: "#FFF",
+    color: COLORS.text,
     fontSize: 10,
     fontWeight: "bold",
   },
@@ -337,36 +350,28 @@ const styles = StyleSheet.create({
   optionBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#111",
+    backgroundColor: COLORS.background,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: COLORS.border,
     marginBottom: 10,
   },
-  optionIcon: {
-    fontSize: 18,
-    marginRight: 15,
-  },
+  optionIcon: { fontSize: 18, marginRight: 15, color: COLORS.text },
   optionText: {
-    color: "#FFF",
+    color: COLORS.text,
     fontWeight: "bold",
     fontSize: 14,
     letterSpacing: 1,
   },
   dangerBtn: {
-    backgroundColor: "rgba(50, 20, 20, 0.3)",
-    borderColor: "#FF453A",
+    backgroundColor: COLORS.danger,
+    borderColor: COLORS.primary,
   },
-  dangerText: {
-    color: "#FF453A",
-  },
-  closeBtn: {
-    paddingVertical: 10,
-    marginTop: 5,
-  },
+  dangerText: { color: COLORS.primary },
+  closeBtn: { paddingVertical: 10, marginTop: 5 },
   closeText: {
-    color: "#555",
+    color: COLORS.subtext,
     fontWeight: "bold",
     fontSize: 12,
     letterSpacing: 1,
