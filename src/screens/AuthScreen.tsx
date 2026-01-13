@@ -10,21 +10,28 @@ import {
   Platform,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithCredential,
+  signInWithCredential, // Import the Auth type
 } from "firebase/auth";
 import * as Google from "expo-auth-session/providers/google";
-import { auth } from "../lib/firebase";
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
+import { auth as firebaseAuth } from "../lib/firebase";
+import type { Auth } from "firebase/auth"; // Rename import to avoid collision if desired, or cast it
 import { COLORS, SPACING } from "../constants/Theme";
 
-// Note: You need to get these IDs from Google Cloud Console
-// and configure them in your app.json / GoogleService-Info.plist
-const ANDROID_CLIENT_ID = "YOUR_ANDROID_CLIENT_ID";
-const IOS_CLIENT_ID = "YOUR_IOS_CLIENT_ID";
-const WEB_CLIENT_ID = "YOUR_WEB_CLIENT_ID";
+// Ensure WebBrowser finishes its session
+WebBrowser.maybeCompleteAuthSession();
+
+// Configure these in your .env file
+// Note: For Expo Go, the WEB_CLIENT_ID is often the primary one used.
+const ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+const IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -33,11 +40,19 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Cast the imported auth to the correct type to resolve implicit 'any' errors
+  const auth = firebaseAuth as Auth;
+
   // Google Auth Request Hook
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: ANDROID_CLIENT_ID,
     iosClientId: IOS_CLIENT_ID,
     webClientId: WEB_CLIENT_ID,
+    // Fix for 404/401: Explicitly define the redirect URI.
+    // This allows you to log it and ensure it matches Google Cloud Console.
+    redirectUri: makeRedirectUri({
+      scheme: "redprotocol",
+    }),
   });
 
   // Handle Google Response
@@ -52,6 +67,7 @@ export default function AuthScreen() {
       });
     } else if (response?.type === "error") {
       setError("Google Sign-In failed.");
+      console.error("Google Auth Error:", response.error);
     }
   }, [response]);
 
@@ -67,9 +83,12 @@ export default function AuthScreen() {
         await createUserWithEmailAndPassword(auth, email, password);
       }
     } catch (e: any) {
-      // Friendly tactical error mapping
       if (e.code === "auth/user-not-found") setError("AGENT NOT FOUND");
       else if (e.code === "auth/wrong-password") setError("INVALID ACCESS KEY");
+      else if (e.code === "auth/invalid-credential")
+        setError("INVALID CREDENTIALS");
+      else if (e.code === "auth/email-already-in-use")
+        setError("AGENT ALREADY EXISTS");
       else setError(e.message.toUpperCase());
     } finally {
       setLoading(false);
@@ -78,100 +97,111 @@ export default function AuthScreen() {
 
   const handleGoogleAuth = async () => {
     if (!request) {
+      // If request is null, it usually means Client IDs are missing or invalid
+      if (!WEB_CLIENT_ID && !ANDROID_CLIENT_ID && !IOS_CLIENT_ID) {
+        return Alert.alert(
+          "Configuration Error",
+          "Google Client IDs are missing. Please check your .env file."
+        );
+      }
       return Alert.alert(
         "Error",
         "Google Auth is not ready yet. Please check configuration."
       );
     }
+    // DEBUG: This log is CRITICAL. It tells you exactly what URI to add to Google Cloud Console.
+    console.log("------------------------------------------------");
+    console.log("REQUIRED REDIRECT URI FOR GOOGLE CONSOLE:");
+    console.log(request.redirectUri);
+    console.log("------------------------------------------------");
     promptAsync();
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <View style={styles.content}>
-        <Text style={styles.logo}>RED PROTOCOL</Text>
-        <Text style={styles.subtitle}>
-          {isLogin ? "SECURE LOGIN" : "RECRUIT ENROLLMENT"}
-        </Text>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+      >
+        <View style={styles.content}>
+          <Text style={styles.logo}>RED PROTOCOL</Text>
+          <Text style={styles.subtitle}>
+            {isLogin ? "SECURE LOGIN" : "RECRUIT ENROLLMENT"}
+          </Text>
 
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>⚠️ {error}</Text>
-          </View>
-        ) : null}
+          {error ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>⚠️ {error}</Text>
+            </View>
+          ) : null}
 
-        <TextInput
-          style={styles.input}
-          placeholder="AGENT EMAIL"
-          placeholderTextColor="#444"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="ACCESS KEY"
-          placeholderTextColor="#444"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="AGENT EMAIL"
+            placeholderTextColor="#444"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="ACCESS KEY"
+            placeholderTextColor="#444"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
 
-        <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={handleAuth}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#000" />
-          ) : (
-            <Text style={styles.primaryBtnText}>
-              {isLogin ? "AUTHORIZE" : "REGISTER"}
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        {/* SOCIAL AUTH DIVIDER */}
-        <View style={styles.dividerContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>OR AUTHENTICATE VIA</Text>
-          <View style={styles.divider} />
-        </View>
-
-        {/* SOCIAL BUTTONS */}
-        <View style={styles.socialContainer}>
           <TouchableOpacity
-            style={styles.socialBtn}
-            onPress={handleGoogleAuth}
-            disabled={!request}
+            style={styles.primaryBtn}
+            onPress={handleAuth}
+            disabled={loading}
           >
-            <Text style={styles.socialText}>GOOGLE</Text>
+            {loading ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Text style={styles.primaryBtnText}>
+                {isLogin ? "AUTHORIZE" : "REGISTER"}
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          {/* SOCIAL AUTH DIVIDER */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>OR AUTHENTICATE VIA</Text>
+            <View style={styles.divider} />
+          </View>
+
+          {/* SOCIAL BUTTONS */}
+          <View style={styles.socialContainer}>
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={handleGoogleAuth}
+              disabled={!request}
+            >
+              <Text style={styles.socialText}>GOOGLE</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={styles.switchBtn}
+            onPress={() => setIsLogin(!isLogin)}
+          >
+            <Text style={styles.switchText}>
+              {isLogin ? "NEW AGENT? REGISTER HERE" : "ALREADY ENROLLED? LOGIN"}
+            </Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={styles.switchBtn}
-          onPress={() => setIsLogin(!isLogin)}
-        >
-          <Text style={styles.switchText}>
-            {isLogin ? "NEW AGENT? REGISTER HERE" : "ALREADY ENROLLED? LOGIN"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    justifyContent: "center",
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  keyboardView: { flex: 1, justifyContent: "center" },
   content: { padding: SPACING.xl },
   logo: {
     color: COLORS.primary,

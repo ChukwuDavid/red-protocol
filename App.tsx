@@ -63,15 +63,26 @@ export default function App() {
     // Start loading while we fetch data
     setLoading(true);
 
+    // FIX: Added 'account' collection segment to ensure even number of path segments (6)
+    // Path: artifacts/red-protocol/users/{uid}/account/profile
     const profileRef = doc(
       db,
       "artifacts",
       APP_ID,
       "users",
       user.uid,
+      "account",
       "profile"
     );
-    const dataRef = doc(db, "artifacts", APP_ID, "users", user.uid, "data");
+    const dataRef = doc(
+      db,
+      "artifacts",
+      APP_ID,
+      "users",
+      user.uid,
+      "account",
+      "data"
+    );
 
     const unsubProfile = onSnapshot(
       profileRef,
@@ -113,15 +124,25 @@ export default function App() {
     if (!user || isLoading || !isOnboarded) return;
 
     const saveToCloud = async () => {
+      // FIX: Updated to match the valid 6-segment path
       const profileRef = doc(
         db,
         "artifacts",
         APP_ID,
         "users",
         user.uid,
+        "account",
         "profile"
       );
-      const dataRef = doc(db, "artifacts", APP_ID, "users", user.uid, "data");
+      const dataRef = doc(
+        db,
+        "artifacts",
+        APP_ID,
+        "users",
+        user.uid,
+        "account",
+        "data"
+      );
 
       try {
         await setDoc(

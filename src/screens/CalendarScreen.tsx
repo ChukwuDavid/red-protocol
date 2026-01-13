@@ -3,11 +3,11 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   StyleSheet,
   StatusBar,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context"; // FIX
 import { COLORS, LAYOUT, SPACING } from "../constants/Theme";
 import { useCycleStore } from "../store/cycleStore";
 import CalendarWidget from "../components/CalendarWidget";

@@ -24,9 +24,9 @@ export default function OnboardingScreen() {
     if (!user) return;
 
     try {
-      // Save profile and set isOnboarded to true
+      // FIX: Use valid 6-segment path: .../users/{uid}/account/profile
       await setDoc(
-        doc(db, "artifacts", APP_ID, "users", user.uid, "profile"),
+        doc(db, "artifacts", APP_ID, "users", user.uid, "account", "profile"),
         {
           partnerName: name,
           cycleLength: parseInt(cycle) || 28,
