@@ -30,6 +30,11 @@
     "scheme": "redprotocol",
     "plugins": [
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9308b86d-9165-40b2-a4ea-44deae70a69b"
+      }
+    }
   }
 }

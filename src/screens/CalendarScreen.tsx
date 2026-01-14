@@ -36,9 +36,9 @@ export default function CalendarScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      s
       <StatusBar barStyle="light-content" />
-
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -49,7 +49,6 @@ export default function CalendarScreen({ navigation }: any) {
         <Text style={styles.headerTitle}>TACTICAL MAP</Text>
         <View style={{ width: 40 }} />
       </View>
-
       <ScrollView
         style={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -100,7 +99,6 @@ export default function CalendarScreen({ navigation }: any) {
           </View>
         </View>
       </ScrollView>
-
       <SymptomModal
         visible={symptomVisible}
         onClose={() => setSymptomVisible(false)}

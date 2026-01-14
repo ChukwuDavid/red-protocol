@@ -15,20 +15,19 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithCredential, // Import the Auth type
+  signInWithCredential,
+  Auth,
 } from "firebase/auth";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
+import Constants from "expo-constants";
 import { auth as firebaseAuth } from "../lib/firebase";
-import type { Auth } from "firebase/auth"; // Rename import to avoid collision if desired, or cast it
 import { COLORS, SPACING } from "../constants/Theme";
 
-// Ensure WebBrowser finishes its session
 WebBrowser.maybeCompleteAuthSession();
 
-// Configure these in your .env file
-// Note: For Expo Go, the WEB_CLIENT_ID is often the primary one used.
+// Env variables
 const ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
 const IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
@@ -40,22 +39,23 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Cast the imported auth to the correct type to resolve implicit 'any' errors
   const auth = firebaseAuth as Auth;
 
-  // Google Auth Request Hook
+  // Generate Redirect URI
+  // In Dev Build: redprotocol://
+  // In Expo Go: exp://... (Google often blocks this)
+  const redirectUri = makeRedirectUri({
+    scheme: "redprotocol",
+    path: "auth",
+  });
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: ANDROID_CLIENT_ID,
     iosClientId: IOS_CLIENT_ID,
     webClientId: WEB_CLIENT_ID,
-    // Fix for 404/401: Explicitly define the redirect URI.
-    // This allows you to log it and ensure it matches Google Cloud Console.
-    redirectUri: makeRedirectUri({
-      scheme: "redprotocol",
-    }),
+    redirectUri: redirectUri,
   });
 
-  // Handle Google Response
   useEffect(() => {
     if (response?.type === "success") {
       const { id_token } = response.params;
@@ -96,24 +96,24 @@ export default function AuthScreen() {
   };
 
   const handleGoogleAuth = async () => {
+    // Check if running in Expo Go (which has issues with custom schemes)
+    if (Constants.appOwnership === "expo") {
+      console.warn(
+        "⚠️ EXPO GO DETECTED: Google Auth may fail. Use a Development Build for reliable testing."
+      );
+      console.log("Current Redirect URI:", redirectUri);
+    }
+
     if (!request) {
-      // If request is null, it usually means Client IDs are missing or invalid
-      if (!WEB_CLIENT_ID && !ANDROID_CLIENT_ID && !IOS_CLIENT_ID) {
-        return Alert.alert(
-          "Configuration Error",
-          "Google Client IDs are missing. Please check your .env file."
-        );
+      if (!WEB_CLIENT_ID) {
+        return Alert.alert("Config Error", "Google Client IDs missing in .env");
       }
       return Alert.alert(
-        "Error",
-        "Google Auth is not ready yet. Please check configuration."
+        "Loading",
+        "Google Auth not ready. Try again in a moment."
       );
     }
-    // DEBUG: This log is CRITICAL. It tells you exactly what URI to add to Google Cloud Console.
-    console.log("------------------------------------------------");
-    console.log("REQUIRED REDIRECT URI FOR GOOGLE CONSOLE:");
-    console.log(request.redirectUri);
-    console.log("------------------------------------------------");
+
     promptAsync();
   };
 
@@ -167,14 +167,12 @@ export default function AuthScreen() {
             )}
           </TouchableOpacity>
 
-          {/* SOCIAL AUTH DIVIDER */}
           <View style={styles.dividerContainer}>
             <View style={styles.divider} />
             <Text style={styles.dividerText}>OR AUTHENTICATE VIA</Text>
             <View style={styles.divider} />
           </View>
 
-          {/* SOCIAL BUTTONS */}
           <View style={styles.socialContainer}>
             <TouchableOpacity
               style={styles.socialBtn}
@@ -249,8 +247,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   primaryBtnText: { color: "#000", fontWeight: "bold", letterSpacing: 2 },
-
-  // Divider Styles
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -263,8 +259,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "bold",
   },
-
-  // Social Styles
   socialContainer: { flexDirection: "row", gap: 15 },
   socialBtn: {
     flex: 1,
@@ -281,7 +275,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 1,
   },
-
   switchBtn: { marginTop: 30, alignItems: "center" },
   switchText: { color: COLORS.subtext, fontSize: 12, fontWeight: "bold" },
 });

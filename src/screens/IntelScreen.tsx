@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   StyleSheet,
   ScrollView,
 } from "react-native";
@@ -11,6 +10,7 @@ import { COLORS, LAYOUT, SPACING } from "../constants/Theme";
 import { useCycleStore } from "../store/cycleStore";
 import { getTacticalIntel } from "../utils/translator";
 import TacticalCommsModal from "../components/TacticalCommsModal";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function IntelScreen({ navigation }: any) {
   const { lastPeriodDate, cycleLength, periodDuration } = useCycleStore();
@@ -18,7 +18,7 @@ export default function IntelScreen({ navigation }: any) {
   const [commsVisible, setCommsVisible] = useState(false);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}

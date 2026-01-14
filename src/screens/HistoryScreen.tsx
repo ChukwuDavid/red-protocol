@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   StyleSheet,
   FlatList,
 } from "react-native";
@@ -11,6 +10,7 @@ import { COLORS, LAYOUT, SPACING } from "../constants/Theme";
 import { useCycleStore } from "../store/cycleStore";
 import { format } from "date-fns";
 import HistoryDetailModal from "../components/HistoryDetailModal";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HistoryScreen({ navigation }: any) {
   const { history, symptoms } = useCycleStore();
@@ -67,7 +67,7 @@ export default function HistoryScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}

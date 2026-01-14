@@ -3,13 +3,13 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   StyleSheet,
   ScrollView,
 } from "react-native";
 import { useCycleStore } from "../store/cycleStore";
 import { format } from "date-fns";
 import { COLORS, LAYOUT, SPACING } from "../constants/Theme";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function InventoryScreen({ navigation, route }: any) {
   const dateParam = route.params?.date
@@ -23,7 +23,7 @@ export default function InventoryScreen({ navigation, route }: any) {
   const progressPercent = Math.round(progress * 100);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
